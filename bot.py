@@ -16,6 +16,29 @@ logger = logging.getLogger(__name__)
 active_games = {}
 active_users = {}
 
+class User:
+    def __init__(self, userObj, chatObj):
+        self.fname = userObj.first_name
+        self.lname = userObj.last_name
+        self.name = userObj.first_name + ' ' + userObj.last_name
+        self.chatid = chatObj.id
+        self.id = userObj.id
+        self.username = userObj.username
+
+class Game:
+    def __init__(self, gameid):
+        self.userlist = []
+        self.gameid = gameid
+
+    def addUser(self, user):
+        self.userlist.append(user)
+    
+    def getUserList(self):
+        msg = ''
+        for x in self.userlist:
+            msg += x.name + '\n'
+        return msg
+
 def help(update, context):
     update.message.reply_text("Use /newgame to create a game.\nUse \join <gameid> to join a game.")
 
@@ -29,18 +52,15 @@ def error(update, context):
 def joingame(update, context):
     gameid = "".join(context.args)
     if(gameid in active_games):
-        active_games[gameid].append(update.message.from_user.first_name + ' ' + update.message.from_user.last_name)
-        msg = ''
-        for x in active_games[gameid]:
-            msg += x + '\n'
-        update.message.reply_text('Joined game successfully. Players in room: \n' + msg)
+        active_games[gameid].addUser(update.message.from_user)
+        update.message.reply_text('Joined game successfully. Players in room: \n' + active_games[gameid].getUserList())
     else:
         update.message.reply_text('Game does not exist. You can create a game using /newgame')
 
 def newgame(update, context):
     gameid = ''.join(random.choices(string.ascii_uppercase, k=5))
-    active_games[gameid] = []
-    active_games[gameid].append(update.message.from_user.first_name + ' ' + update.message.from_user.last_name)
+    active_games[gameid] = Game(gameid)
+    active_games[gameid].addUser(update.message.from_user)
     update.message.reply_text('New game created. Ask your friends to join using \"/join ' + gameid + '\"')
 
 
