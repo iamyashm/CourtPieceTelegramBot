@@ -52,15 +52,19 @@ def error(update, context):
 def joingame(update, context):
     gameid = "".join(context.args)
     if(gameid in active_games):
-        active_games[gameid].addUser(update.message.from_user)
+        newuser = User(update.message.from_user, update.effective_chat)
         update.message.reply_text('Joined game successfully. Players in room: \n' + active_games[gameid].getUserList())
+        for x in active_games[gameid].userlist:
+            update.message.bot.send_message(x.chatid, update.message.from_user.name + ' has joined the game')
+        active_games[gameid].addUser(newuser)
     else:
         update.message.reply_text('Game does not exist. You can create a game using /newgame')
 
 def newgame(update, context):
     gameid = ''.join(random.choices(string.ascii_uppercase, k=5))
     active_games[gameid] = Game(gameid)
-    active_games[gameid].addUser(update.message.from_user)
+    newuser = User(update.message.from_user, update.effective_chat)
+    active_games[gameid].addUser(newuser)
     update.message.reply_text('New game created. Ask your friends to join using \"/join ' + gameid + '\"')
 
 
