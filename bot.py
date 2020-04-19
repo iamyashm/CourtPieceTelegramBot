@@ -71,6 +71,8 @@ class Game:
         self.availableCards = DECK
         self.trump = None
         self.currPlayer = None
+        self.roundParams = {'First Player': None, 'Suit': None, 'Highest Card': None, 'Highest Player': None, 'Turn Count': 0, 'Current Player': None} 
+        self.lastWinner = None
 
     def addUser(self, user):
         self.userlist.append(user)
@@ -101,7 +103,9 @@ class Game:
             self.playerIdx += 1
         markup = ReplyKeyboardMarkup(keyboard=[['Team 1', 'Team 2']], one_time_keyboard=True)
         update.message.bot.send_message(self.host.id, 'Enter team number for ' + self.userlist[self.playerIdx].name, reply_markup=markup)
-            
+
+    def parseCard(self, card):
+        return card[0], card[2:]
 
     def respond(self, update, context):
         print(update.message.text)
@@ -120,14 +124,27 @@ class Game:
                 if self.trump=='Pass':
                     for i in range(4):
                         if i!=index:
-                            bot.send_message(self.userlist[i].id, name + " has passed to select the Trump Suit!" , reply_markup=ReplyKeyboardRemove())
+                            bot.send_message(self.userlist[i].id, name + " has passed the Trump Suit selection to their teammate!" , reply_markup=ReplyKeyboardRemove())
                 elif self.trump=='Suit of teammate\'s 7th card':
                     for i in range(4):
                         if i!=index:
-                            bot.send_message(self.userlist[i].id, name + " has passed to select the Trump Suit!" , reply_markup=ReplyKeyboardRemove())
+                            bot.send_message(self.userlist[i].id, name + " has passed the Trump Suit selection! Their teammate's 7th card will be the Trump Suit." , reply_markup=ReplyKeyboardRemove())
                 else:
                     pass
                 self.dealCards()
+            elif (self.state == 'ROUNDS'):
+                val, suit = self.parseCard(update.message.text)
+            
+                if(self.roundParams['Turn Count'] == 1):
+                    self.roundParams['Suit'] = suit
+                    self.roundParams['Highest Card'] = {'Value': val, 'Suit': suit }
+                    self.roundParams['Highest Player'] = self.roundParams['Current Player']
+
+                for i in range(4):
+                    if (i != roundParams['Current Player']):
+                        bot.send_message(userlist[i], roundParams['Current Player'].name + ' played ' + update.message.text)
+                roundParams['Turn Count'] += 1
+                roundParams['Current Player'] = (roundParams['Current Player'] + 1) % 4
             else:
                 update.message.reply_text('Invalid command')
         else:
@@ -145,6 +162,8 @@ class Game:
             self.userlist[3] = self.teams[otherTeam][1]
             self.state = 'TRUMP CALL 1'
             self.currPlayer = self.userlist[0]
+            self.lastWinner = 0
+
             for j in range(5):
                 self.userlist[0].cards.append(self.availableCards[j])               
             
@@ -186,6 +205,25 @@ class Game:
             print(self.trump)
         else: 
             pass
+
+    def beginRound(self):
+        
+        #setting up round
+        if(self.roundParams['Turn Count'] == 0):
+            self.roundNo += 1
+            for i in range(4):
+                bot.send_message(self.userlists[i], '------------------- ROUND ' + self.roundNo + ' -------------------') 
+            self.roundParams['First Player'] = self.lastWinner
+            self.roundParams['Current Player'] = self.lastWinner
+            self.roundParams['Turn Count'] = 1
+            self.currPlayer = self.userlist[self.lastWinner]
+            bot.send_message(self.currPlayer.id, 'You are starting the round. Play a card.')
+        
+        #after all 4 turns
+        if(self.roundParams['Turn Count'] == 5):
+            pass
+
+
 
 def reset(update, context):
     active_games = {}
