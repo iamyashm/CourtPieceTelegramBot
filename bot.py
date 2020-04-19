@@ -53,7 +53,7 @@ class User:
         for x in self.cards:
             res += x + ' , '
             c += 1
-            if (c % 7 == 0):
+            if (c % 4 == 0):
                 res += '\n'
         
         return res
@@ -112,6 +112,21 @@ class Game:
                 self.setTeams(update)
             elif(self.state == 'TRUMP CALL 1' or self.state == 'TRUMP CALL 2'):
                 self.trump = update.message.text
+                index, name = 0, ""
+                for i in range(4):
+                    if self.userlist[i].id==update.message.from_user.id:
+                        index, name = i, self.userlist[i].name
+                        break
+                if self.trump=='Pass':
+                    for i in range(4):
+                        if i!=index:
+                            bot.send_message(self.userlist[i].id, name + " has passed to select the Trump Suit!" , reply_markup=ReplyKeyboardRemove())
+                elif self.trump=='Suit of teammate\'s 7th card':
+                    for i in range(4):
+                        if i!=index:
+                            bot.send_message(self.userlist[i].id, name + " has passed to select the Trump Suit!" , reply_markup=ReplyKeyboardRemove())
+                else:
+                    pass
                 self.dealCards()
             else:
                 update.message.reply_text('Invalid command')
