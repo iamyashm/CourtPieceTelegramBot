@@ -4,6 +4,7 @@ from telegram import ForceReply, ReplyKeyboardMarkup, KeyboardButton, ReplyKeybo
 import logging
 import string
 import random
+import ujson
 from emoji import emojize
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
@@ -50,7 +51,6 @@ class User:
         c = 0
         res = 'Cards in Hand:\n'
         for x in self.cards:
-            # res += '|' + x + '|'
             c += 1
             if (c % 4 == 0):
                 res += x + '\n'
@@ -98,7 +98,9 @@ class Game:
         self.userlist = []
         self.gameid = gameid
         self.numPlayers = 0
+        self.gameNo = 1
         self.roundNo = 0
+        self.gameScores = {'1': 0, '2': 0}
         self.scores = {'1':0, '2':0}
         self.teams = {'1': None, '2': None}
         self.state = 'SETUP'
@@ -108,6 +110,15 @@ class Game:
         self.currPlayer = None
         self.roundParams = {'First Player': None, 'Suit': None, 'Highest Card': None, 'Highest Player': None, 'Turn Count': 0, 'Current Player': None, 'Messages': None} 
         self.lastWinner = None
+    
+    def playAgain(self):
+        self.roundNo = 0
+        self.gameNo += 1
+        self.scores = {'1': 0, '2': 0}
+        self.state = 'SETUP'
+        self.trump = None
+        self.roundParams = {'First Player': None, 'Suit': None, 'Highest Card': None, 'Highest Player': None, 'Turn Count': 0, 'Current Player': None, 'Messages': None} 
+        self.dealCards()
 
     def addUser(self, user):
         self.userlist.append(user)
@@ -127,8 +138,10 @@ class Game:
             return 'Game has not started'
         else:
             data = ''
+            data += 'Current Game: ' + str(self.gameNo) + '\n\n'
             data += 'Current Round: ' + str(self.roundNo) + '\n\n'
-            data += 'Scores:\nTeam 1: ' + str(self.scores['1']) + '    Team 2: ' + str(self.scores['2']) + '\n\n'
+            data += 'Current Game Scores:\nTeam 1: ' + str(self.scores['1']) + '    Team 2: ' + str(self.scores['2']) + '\n\n'
+            data += 'Total Game wins:\nTeam 1: ' + str(self.gameScores['1']) + '    Team 2: ' + str(self.gameScores['2']) + '\n\n'
             data += 'Trump Card: ' + self.trump + '\n'
             return data
 
@@ -270,6 +283,14 @@ class Game:
                     self.currPlayer = self.userlist[self.roundParams['Current Player']]
                     print(self.roundParams)
                     self.beginRound()
+            elif(self.state == 'GAMEOVER'):
+                if(update.message.text == 'Yes'):
+                    self.playAgain()
+                elif(update.message.text == 'No'):
+                    for u in self.userlist:
+                        bot.send_message(u.id, 'The host has ended the game', reply_markup=ReplyKeyboardRemove())
+                else:
+                    update.reply_text('Invalid input')
             else:
                 update.message.reply_text('Invalid command')
         else:
@@ -371,12 +392,16 @@ class Game:
             if(self.scores['1'] == 7 or self.scores['2'] == 7):
                 winteam = ''
                 if(self.scores['1'] == 7):
+                    self.gameScores['1'] += 1
                     winteam = 'Team 1'
                 else:
+                    self.gameScores['2'] += 1
                     winteam = 'Team 2'
                 for i in range(4):
                     bot.send_message(self.userlist[i].id, emojize(winteam + ' wins the game! :tada:', use_aliases=True), reply_markup=ReplyKeyboardRemove())
                 self.state = 'GAMEOVER'
+                yesno = ReplyKeyboardMarkup(keyboard=[['Yes', 'No']], one_time_keyboard = True)
+                bot.send_message(self.host.id, 'Do you want to play another game?', reply_markup=yesno)
                 return
             else:
                 self.beginRound()
@@ -440,6 +465,19 @@ def gameinfo(update, context):
     else:
         update.message.reply_text('Please create or join a game first.')
 
+def endgame(update, context):
+    if(update.message.from_user.id in user_game):
+        gameid = user_game[update.message.from_user.id]
+        gm = active_games[gameid]
+        if(update.message.from_user.id == gm.host.id):
+            for u in gm.userlist:
+                bot.send_message(u.id, 'The host has ended the game.')
+            del active_games[gameid]
+        else:
+            update.message.reply_text('Unauthorized. Only host can end game.')
+    else:
+        update.reply_text('No active game.')
+
 def main():
     updater = Updater(BOT_TOKEN, use_context=True)
     bot = updater.bot
@@ -449,6 +487,7 @@ def main():
     updater.dispatcher.add_handler(CommandHandler('help', helper))
     updater.dispatcher.add_handler(CommandHandler('reset', reset))
     updater.dispatcher.add_handler(CommandHandler('gameinfo', gameinfo))
+    updater.dispatcher.add_handler(CommandHandler('endgame', endgame))
     updater.dispatcher.add_handler(MessageHandler(Filters.text & (~Filters.command), respond))
     updater.dispatcher.add_error_handler(error)
 
