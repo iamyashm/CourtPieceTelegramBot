@@ -112,6 +112,9 @@ class Game:
         self.lastWinner = None
     
     def playAgain(self):
+        for u in self.userlist:
+            u.cards = []
+            bot.send_message(u.id, 'Starting new game....', reply_markup=ReplyKeyboardRemove())
         self.roundNo = 0
         self.gameNo += 1
         self.scores = {'1': 0, '2': 0}
@@ -140,7 +143,7 @@ class Game:
             data = ''
             data += 'Current Game: ' + str(self.gameNo) + '\n\n'
             data += 'Current Round: ' + str(self.roundNo) + '\n\n'
-            data += 'Current Game Scores:\nTeam 1: ' + str(self.scores['1']) + '    Team 2: ' + str(self.scores['2']) + '\n\n'
+            data += 'Round wins (current game):\nTeam 1: ' + str(self.scores['1']) + '    Team 2: ' + str(self.scores['2']) + '\n\n'
             data += 'Total Game wins:\nTeam 1: ' + str(self.gameScores['1']) + '    Team 2: ' + str(self.gameScores['2']) + '\n\n'
             data += 'Trump Card: ' + self.trump + '\n'
             return data
