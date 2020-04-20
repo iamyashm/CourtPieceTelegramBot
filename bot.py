@@ -50,12 +50,12 @@ class User:
         c = 0
         res = 'Cards in Hand:\n'
         for x in self.cards:
-            res += '|' + x + '|'
+            # res += '|' + x + '|'
             c += 1
             if (c % 4 == 0):
-                res += '\n'
+                res += x + '\n'
             else:
-                res += ' , '
+                res += x + '  |  '
         
         return res
 
