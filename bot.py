@@ -8,8 +8,7 @@ from emoji import emojize
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 BOT_TOKEN = '1282833871:AAF4jJhL6Rqt-hdYs4PfsvEdD-GZNU1QC8Y'
@@ -122,7 +121,17 @@ class Game:
         for x in self.userlist:
             msg += x.name + '\n'
         return msg
-    
+   
+    def getGameInfo(self):
+        if(self.roundNo == 0):
+            return 'Game has not started'
+        else:
+            data = ''
+            data += 'Current Round: ' + str(self.roundNo) + '\n\n'
+            data += 'Scores:\nTeam 1: ' + str(self.scores['1']) + '    Team 2: ' + str(self.scores['2']) + '\n\n'
+            data += 'Trump Card: ' + self.trump + '\n'
+            return data
+
     def setTeams(self, update, flag = 0):
         if(flag == 0):
             if(self.playerIdx == -1):
@@ -284,7 +293,7 @@ class Game:
             self.userlist[0].sortCards()
             suitMarkup = ReplyKeyboardMarkup(keyboard=[[HEARTS, DIAMONDS], [SPADES, CLUBS], ['Pass']], one_time_keyboard=True)
             bot.send_message(self.userlist[0].id, self.userlist[0].getCards(), reply_markup=ReplyKeyboardRemove())  
-            bot.send_message(self.userlist[0].id, 'Choose the trump suit', reply_markup=suitMarkup)
+            bot.send_message(self.userlist[0].id, 'Choose the trump suit:', reply_markup=suitMarkup)
 
         elif(self.state == 'TRUMP CALL 1'):
             if(self.trump == 'Pass'):
@@ -296,7 +305,7 @@ class Game:
                 self.currPlayer = self.userlist[2]   
                 self.state = 'TRUMP CALL 2'
                 suitMarkup = ReplyKeyboardMarkup(keyboard=[[HEARTS, DIAMONDS], [SPADES, CLUBS], ['Suit of teammate\'s 7th card']], one_time_keyboard=True)
-                bot.send_message(self.userlist[2].id, 'Choose the trump suit', reply_markup=suitMarkup)
+                bot.send_message(self.userlist[2].id, 'Choose the trump suit:', reply_markup=suitMarkup)
             else:
                 for i in range(4):
                     for j in range(len(self.userlist[i].cards), 13):
@@ -361,7 +370,7 @@ class Game:
                 else:
                     winteam = 'Team 2'
                 for i in range(4):
-                    bot.send_message(self.userlist[i].id, winteam + ' wins the game!', reply_markup=ReplyKeyboardRemove())
+                    bot.send_message(self.userlist[i].id, emojize(winteam + ' wins the game! :tada:', use_aliases=True), reply_markup=ReplyKeyboardRemove())
                 self.state = 'GAMEOVER'
                 return
             else:
@@ -377,10 +386,10 @@ def reset(update, context):
     active_games = {}
 
 def helper(update, context):
-    update.message.reply_text("Use /newgame to create a game.\nUse /join <gameid> to join a game.")
+    update.message.reply_text("Use /newgame to create a game.\nUse /join <gameid> to join a game.\nUse /gameinfo to get details of current game (scores, trump card, round number)\n")
 
 def start(update, context):
-    update.message.reply_text("Welcome to Court Piece")
+    update.message.reply_text("Welcome to Court Piece. Use /help to get a list of available commands.")
 
 def error(update, context):
     """Log Errors caused by Updates."""
@@ -401,7 +410,7 @@ def joingame(update, context):
         else:
             update.message.reply_text('Could not join game. Room is full.')
     else:
-        update.message.reply_text('Game does not exist. You can create a game using /newgame')
+        update.message.reply_text('Game does not exist. You can create a game using /newgame.')
 
 def newgame(update, context):
     gameid = ''.join(random.choices(string.ascii_uppercase, k=5))
@@ -412,12 +421,19 @@ def newgame(update, context):
     update.message.reply_text('New game created. Ask your friends to join using \"/join ' + gameid + '\"', reply_markup=ReplyKeyboardRemove())
 
 def respond(update, context):
-    gameid = user_game[update.message.from_user.id]
-    if (gameid in active_games):
+    if(update.message.from_user.id in user_game):
+        gameid = user_game[update.message.from_user.id]
         gm = active_games[gameid]
         gm.respond(update, context)
     else:
-        update.message.reply_text('Invalid option. Please create or join a game')
+        update.message.reply_text('Invalid option. Please create or join a game.')
+
+def gameinfo(update, context):
+    if(update.message.from_user.id in user_game):
+        gameid = user_game[update.message.from_user.id]
+        update.message.reply_text(active_games[gameid].getGameInfo(), reply_markup=ReplyKeyboardRemove())
+    else:
+        update.message.reply_text('Please create or join a game first.')
 
 def main():
     updater = Updater(BOT_TOKEN, use_context=True)
@@ -427,6 +443,7 @@ def main():
     updater.dispatcher.add_handler(CommandHandler('join', joingame))
     updater.dispatcher.add_handler(CommandHandler('help', helper))
     updater.dispatcher.add_handler(CommandHandler('reset', reset))
+    updater.dispatcher.add_handler(CommandHandler('gameinfo', gameinfo))
     updater.dispatcher.add_handler(MessageHandler(Filters.text & (~Filters.command), respond))
     updater.dispatcher.add_error_handler(error)
 
