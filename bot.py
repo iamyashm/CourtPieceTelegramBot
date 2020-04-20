@@ -106,7 +106,7 @@ class Game:
         self.availableCards = DECK
         self.trump = None
         self.currPlayer = None
-        self.roundParams = {'First Player': None, 'Suit': None, 'Highest Card': None, 'Highest Player': None, 'Turn Count': 0, 'Current Player': None} 
+        self.roundParams = {'First Player': None, 'Suit': None, 'Highest Card': None, 'Highest Player': None, 'Turn Count': 0, 'Current Player': None, 'Messages': None} 
         self.lastWinner = None
 
     def addUser(self, user):
@@ -263,7 +263,8 @@ class Game:
                         
                     for i in range(4):
                         if (i != self.roundParams['Current Player']):
-                            bot.send_message(self.userlist[i].id, self.currPlayer.name + ' played ' + update.message.text)
+                            mess = bot.send_message(self.userlist[i].id, self.currPlayer.name + ' played ' + update.message.text)
+                            self.roundParams['Messages'].append(mess)
                     self.roundParams['Turn Count'] += 1
                     self.roundParams['Current Player'] = (self.roundParams['Current Player'] + 1) % 4
                     self.currPlayer = self.userlist[self.roundParams['Current Player']]
@@ -352,6 +353,10 @@ class Game:
             self.roundParams['Current Player'] = self.lastWinner
             self.roundParams['Turn Count'] = 1
             self.roundParams['Suit'] = None
+            if(self.roundParams['Messages'] != None):
+                for m in self.roundParams['Messages']:
+                    bot.delete_message(chat_id = m.chat_id, message_id = m.message_id)
+            self.roundParams['Messages'] = []
             self.currPlayer = self.userlist[self.lastWinner]
             bot.send_message(self.currPlayer.id, 'You are starting the round. Play a card.', reply_markup = self.currPlayer.getCardKeyboard())
         
