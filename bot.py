@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+MODE = os.getenv("MODE")
 
 HEARTS = emojize(":hearts:", use_aliases=True)
 CLUBS = emojize(":clubs:", use_aliases=True)
@@ -33,6 +34,20 @@ for i in range(52):
 active_games = {}
 user_game = {}
 bot = telegram.Bot(BOT_TOKEN)
+
+if (MODE == "dev"):
+    def run(updater):
+        updater.start_polling()
+        updater.idle()
+elif (MODE == "deploy"):
+    def run(updater):
+        PORT = int(os.getenv("PORT", "8443"))
+        updater.start_webhook(listen="0.0.0.0", port=PORT, url_path=BOT_TOKEN)
+        updater.bot.set_webhook("https://court-piece-bot.herokuapp.com/" + BOT_TOKEN)
+        updater.idle()
+else:
+    logger.error("No mode specified")
+    sys.exit(1)
 
 class User:
     def __init__(self, userObj, chatObj, gameid):
@@ -491,7 +506,6 @@ def endgame(update, context):
 
 def main():
     updater = Updater(BOT_TOKEN, use_context=True)
-    bot = updater.bot
     updater.dispatcher.add_handler(CommandHandler('start', start))
     updater.dispatcher.add_handler(CommandHandler('newgame', newgame))
     updater.dispatcher.add_handler(CommandHandler('join', joingame))
@@ -502,10 +516,10 @@ def main():
     updater.dispatcher.add_handler(MessageHandler(Filters.text & (~Filters.command), respond))
     updater.dispatcher.add_error_handler(error)
 
-    updater.start_polling()
+    #updater.start_polling()
 
-    updater.idle()
-
+    #updater.idle()
+    run(updater)
 
 if __name__ == '__main__':
     main()
