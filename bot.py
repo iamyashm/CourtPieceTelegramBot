@@ -419,10 +419,15 @@ class Game:
 
 
 def reset(update, context):
-    active_games = {}
+    if(update.message.from_user.id == 1229839401):
+        active_games = {}
+        user_game = {}
+        update.message.reply_text('Game list cleared.')
+    else:
+        update.message.reply_text('Unauthorized.')
 
 def helper(update, context):
-    update.message.reply_text("Use /newgame to create a game.\nUse /join <gameid> to join a game.\nUse /gameinfo to get details of current game (scores, trump card, round number)\n")
+    update.message.reply_text("Use /newgame to create a game.\nUse /join <gameid> to join a game.\nUse /gameinfo to get details of current game (scores, trump card, round number, etc)\nUse /endgame to end current game\n")
 
 def start(update, context):
     update.message.reply_text("Welcome to Court Piece. Use /help to get a list of available commands.")
