@@ -505,7 +505,7 @@ def endgame(update, context):
             for u in gm.userlist:
                 bot.send_message(u.id, 'The host has ended the game.', reply_markup=ReplyKeyboardRemove())
             del active_games[gameid]
-            del user_game[update.mesage.from_user.id]
+            del user_game[update.message.from_user.id]
         else:
             update.message.reply_text('Unauthorized. Only host can end game.')
     else:
