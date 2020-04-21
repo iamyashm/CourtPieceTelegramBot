@@ -306,8 +306,7 @@ class Game:
                 if(update.message.text == 'Yes'):
                     self.playAgain()
                 elif(update.message.text == 'No'):
-                    for u in self.userlist:
-                        bot.send_message(u.id, 'The host has ended the game', reply_markup=ReplyKeyboardRemove())
+                    endgame(update, context)
                 else:
                     update.reply_text('Invalid input')
             else:
@@ -318,7 +317,8 @@ class Game:
     def dealCards(self):
         
         if(self.state == 'SETUP'):
-            random.shuffle(self.availableCards)
+            for i in range(5):
+                random.shuffle(self.availableCards)
             self.callingTeam = str(random.randrange(2) + 1)
             otherTeam = '2' if self.callingTeam == '1' else  '1'
             self.userlist[0] = self.teams[self.callingTeam][0]
@@ -439,7 +439,7 @@ def reset(update, context):
         update.message.reply_text('Unauthorized.')
 
 def about(update, context):
-    update.message.reply_text('Court Piece Bot made by Yash Maniramka and Yashvardhan Jain.\n Contact @iamyashm7 for reporting bugs, feedback and suggestions.')
+    update.message.reply_text('Court Piece Bot made by Yash Maniramka and Yashvardhan Jain.\nContact @iamyashm7 for reporting bugs, feedback and suggestions.')
 
 def helper(update, context):
     update.message.reply_text("Use /newgame to create a game.\nUse /join <gameid> to join a game.\nUse /gameinfo to get details of current game (scores, trump card, round number, etc)\nUse /endgame to end current game\nUse /about to get info about bot.")
@@ -505,8 +505,8 @@ def endgame(update, context):
         if(update.message.from_user.id == gm.host.id):
             for u in gm.userlist:
                 bot.send_message(u.id, 'The host has ended the game.', reply_markup=ReplyKeyboardRemove())
+                del user_game[u.id] 
             del active_games[gameid]
-            del user_game[update.message.from_user.id]
         else:
             update.message.reply_text('Unauthorized. Only host can end game.')
     else:
