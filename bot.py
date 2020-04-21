@@ -435,8 +435,8 @@ class Game:
 
 def reset(update, context):
     if(update.message.from_user.id == 1229839401):
-        active_games = {}
-        user_game = {}
+        active_games.clear()
+        user_game.clear()
         update.message.reply_text('Game list cleared.')
     else:
         update.message.reply_text('Unauthorized.')
@@ -469,12 +469,15 @@ def joingame(update, context):
         update.message.reply_text('Game does not exist. You can create a game using /newgame.')
 
 def newgame(update, context):
-    gameid = ''.join(random.choices(string.ascii_uppercase, k=5))
-    active_games[gameid] = Game(gameid)
-    newuser = User(update.message.from_user, update.effective_chat, gameid)
-    active_games[gameid].addUser(newuser)
-    user_game[update.message.from_user.id] = gameid
-    update.message.reply_text('New game created. Ask your friends to join using \"/join ' + gameid + '\"', reply_markup=ReplyKeyboardRemove())
+    if(len(active_games) > 2):
+        update.message.reply_text('Server limit reached. Try again later.')
+    else:
+        gameid = ''.join(random.choices(string.ascii_uppercase, k=5))
+        active_games[gameid] = Game(gameid)
+        newuser = User(update.message.from_user, update.effective_chat, gameid)
+        active_games[gameid].addUser(newuser)
+        user_game[update.message.from_user.id] = gameid
+        update.message.reply_text('New game created. Ask your friends to join using \"/join ' + gameid + '\"', reply_markup=ReplyKeyboardRemove())
 
 def respond(update, context):
     if(update.message.from_user.id in user_game):
@@ -482,7 +485,7 @@ def respond(update, context):
         gm = active_games[gameid]
         gm.respond(update, context)
     else:
-        update.message.reply_text('Invalid option. Please create or join a game.')
+        update.message.reply_text('Invalid option. Please create or join a game. Use /help to see a list of commands.')
 
 def gameinfo(update, context):
     if(update.message.from_user.id in user_game):
@@ -497,12 +500,12 @@ def endgame(update, context):
         gm = active_games[gameid]
         if(update.message.from_user.id == gm.host.id):
             for u in gm.userlist:
-                bot.send_message(u.id, 'The host has ended the game.')
+                bot.send_message(u.id, 'The host has ended the game.', reply_markup=ReplyKeyboardRemove())
             del active_games[gameid]
         else:
             update.message.reply_text('Unauthorized. Only host can end game.')
     else:
-        update.reply_text('No active game.')
+        update.message.reply_text('No active game.')
 
 def main():
     updater = Updater(BOT_TOKEN, use_context=True)
