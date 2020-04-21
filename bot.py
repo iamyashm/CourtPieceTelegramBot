@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 MODE = os.getenv("MODE")
-
+ADMIN_ID = int(os.getenv("ADMIN_ID"))
 HEARTS = emojize(":hearts:", use_aliases=True)
 CLUBS = emojize(":clubs:", use_aliases=True)
 DIAMONDS = emojize(":diamonds:", use_aliases=True)
@@ -155,7 +155,7 @@ class Game:
         return msg
    
     def getGameInfo(self):
-        if(self.roundNo == 0):
+        if(self.gameNo == 1 and self.roundNo < 1):
             return 'Game has not started'
         else:
             data = ''
@@ -423,6 +423,7 @@ class Game:
                 self.state = 'GAMEOVER'
                 yesno = ReplyKeyboardMarkup(keyboard=[['Yes', 'No']], one_time_keyboard = True)
                 bot.send_message(self.host.id, 'Do you want to play another game?', reply_markup=yesno)
+                self.currPlayer = self.host
                 return
             else:
                 self.beginRound()
@@ -434,7 +435,7 @@ class Game:
 
 
 def reset(update, context):
-    if(update.message.from_user.id == 1229839401):
+    if(update.message.from_user.id == ADMIN_ID):
         active_games.clear()
         user_game.clear()
         update.message.reply_text('Game list cleared.')
@@ -455,21 +456,24 @@ def error(update, context):
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
 def joingame(update, context):
-    gameid = "".join(context.args)
-    if(gameid in active_games):
-        if(active_games[gameid].numPlayers < 4):
-            newuser = User(update.message.from_user, update.effective_chat, gameid)
-            update.message.reply_text('Joined game successfully. Players in room: \n' + active_games[gameid].getUserList(), reply_markup=ReplyKeyboardRemove())
-            for x in active_games[gameid].userlist:
-                update.message.bot.send_message(x.chatid, update.message.from_user.name + ' has joined the game')
-            active_games[gameid].addUser(newuser)
-            user_game[update.message.from_user.id] = gameid
-            if(active_games[gameid].numPlayers == 4):
-                active_games[gameid].setTeams(update)
-        else:
-            update.message.reply_text('Could not join game. Room is full.')
+    if((update.message.from_user.id in user_game) and (update.message.from_user.id != ADMIN_ID)):
+        update.message.reply_text('Could not join. Already in a game.')
     else:
-        update.message.reply_text('Game does not exist. You can create a game using /newgame.')
+        gameid = "".join(context.args)
+        if(gameid in active_games):
+            if(active_games[gameid].numPlayers < 4):
+                newuser = User(update.message.from_user, update.effective_chat, gameid)
+                update.message.reply_text('Joined game successfully. Players in room: \n' + active_games[gameid].getUserList(), reply_markup=ReplyKeyboardRemove())
+                for x in active_games[gameid].userlist:
+                    update.message.bot.send_message(x.chatid, update.message.from_user.name + ' has joined the game')
+                active_games[gameid].addUser(newuser)
+                user_game[update.message.from_user.id] = gameid
+                if(active_games[gameid].numPlayers == 4):
+                    active_games[gameid].setTeams(update)
+            else:
+                update.message.reply_text('Could not join game. Room is full.')
+        else:
+            update.message.reply_text('Game does not exist. You can create a game using /newgame.')
 
 def newgame(update, context):
     if(len(active_games) > 2):
