@@ -278,7 +278,6 @@ class Game:
             elif (self.state == 'ROUNDS'):
                 val, suit = self.parseCard(update.message.text)
                 
-                #add validation for card here
                 if(self.validateMove(update.message.text) == False):
                     bot.send_message(self.currPlayer.id, 'Invalid move, please try again.', reply_markup=self.currPlayer.getCardKeyboard())
                 
@@ -302,7 +301,6 @@ class Game:
                     self.roundParams['Turn Count'] += 1
                     self.roundParams['Current Player'] = (self.roundParams['Current Player'] + 1) % 4
                     self.currPlayer = self.userlist[self.roundParams['Current Player']]
-                    print(self.roundParams)
                     self.beginRound()
             elif(self.state == 'GAMEOVER'):
                 if(update.message.text == 'Yes'):
@@ -358,7 +356,6 @@ class Game:
                     bot.send_message(self.userlist[i].id, 'The trump suit is ' + self.trump)
                 self.state = 'ROUNDS'
                 self.currPlayer = self.teams[self.callingTeam][0]
-                print(self.trump)
                 self.beginRound()
         elif(self.state == 'TRUMP CALL 2'):    
             for i in range(4):
@@ -378,7 +375,6 @@ class Game:
             
             self.currPlayer = self.teams[self.callingTeam][0]
             self.state = 'ROUNDS'
-            print(self.trump)
             self.beginRound()
         else: 
             pass
@@ -443,7 +439,7 @@ def reset(update, context):
         update.message.reply_text('Unauthorized.')
 
 def about(update, context):
-    update.message.reply_text('Court Piece Bot made by Yash Maniramka and Yashvardhan Jain. Contact @iamyashm7 for reporting bugs, feedback and suggestions.')
+    update.message.reply_text('Court Piece Bot made by Yash Maniramka and Yashvardhan Jain.\n Contact @iamyashm7 for reporting bugs, feedback and suggestions.')
 
 def helper(update, context):
     update.message.reply_text("Use /newgame to create a game.\nUse /join <gameid> to join a game.\nUse /gameinfo to get details of current game (scores, trump card, round number, etc)\nUse /endgame to end current game\nUse /about to get info about bot.")
@@ -476,6 +472,7 @@ def joingame(update, context):
             update.message.reply_text('Game does not exist. You can create a game using /newgame.')
 
 def newgame(update, context):
+    print(update.message.from_user.name + ' started a new game.')
     if(len(active_games) > 2):
         update.message.reply_text('Server limit reached. Try again later.')
     else:
