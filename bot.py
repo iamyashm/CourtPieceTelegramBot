@@ -1,3 +1,4 @@
+import os
 import telegram
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from telegram import ForceReply, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
@@ -8,11 +9,13 @@ import ujson
 from emoji import emojize
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
+from dotenv import load_dotenv
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-BOT_TOKEN = '1282833871:AAF4jJhL6Rqt-hdYs4PfsvEdD-GZNU1QC8Y'
+load_dotenv()
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 HEARTS = emojize(":hearts:", use_aliases=True)
 CLUBS = emojize(":clubs:", use_aliases=True)
