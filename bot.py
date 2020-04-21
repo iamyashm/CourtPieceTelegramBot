@@ -441,8 +441,11 @@ def reset(update, context):
     else:
         update.message.reply_text('Unauthorized.')
 
+def about(update, context):
+    update.message.reply_text('Court Piece Bot made by Yash Maniramka and Yashvardhan Jain. Contact @iamyashm7 for reporting bugs, feedback and suggestions.')
+
 def helper(update, context):
-    update.message.reply_text("Use /newgame to create a game.\nUse /join <gameid> to join a game.\nUse /gameinfo to get details of current game (scores, trump card, round number, etc)\nUse /endgame to end current game\n")
+    update.message.reply_text("Use /newgame to create a game.\nUse /join <gameid> to join a game.\nUse /gameinfo to get details of current game (scores, trump card, round number, etc)\nUse /endgame to end current game\nUse /about to get info about bot.")
 
 def start(update, context):
     update.message.reply_text("Welcome to Court Piece. Use /help to get a list of available commands.")
@@ -490,7 +493,6 @@ def respond(update, context):
 def gameinfo(update, context):
     if(update.message.from_user.id in user_game):
         gameid = user_game[update.message.from_user.id]
-        print('in gameinfo')
         update.message.reply_text(active_games[gameid].getGameInfo(), reply_markup=ReplyKeyboardRemove())
     else:
         update.message.reply_text('Please create or join a game first.')
@@ -518,6 +520,7 @@ def main():
     updater.dispatcher.add_handler(CommandHandler('reset', reset))
     updater.dispatcher.add_handler(CommandHandler('gameinfo', gameinfo))
     updater.dispatcher.add_handler(CommandHandler('endgame', endgame))
+    updater.dispatcher.add_handler(CommandHandler('about', about))
     updater.dispatcher.add_handler(MessageHandler(Filters.text & (~Filters.command), respond))
     updater.dispatcher.add_error_handler(error)
 
