@@ -490,6 +490,7 @@ def respond(update, context):
 def gameinfo(update, context):
     if(update.message.from_user.id in user_game):
         gameid = user_game[update.message.from_user.id]
+        print('in gameinfo')
         update.message.reply_text(active_games[gameid].getGameInfo(), reply_markup=ReplyKeyboardRemove())
     else:
         update.message.reply_text('Please create or join a game first.')
@@ -519,9 +520,6 @@ def main():
     updater.dispatcher.add_handler(MessageHandler(Filters.text & (~Filters.command), respond))
     updater.dispatcher.add_error_handler(error)
 
-    #updater.start_polling()
-
-    #updater.idle()
     run(updater)
 
 if __name__ == '__main__':
