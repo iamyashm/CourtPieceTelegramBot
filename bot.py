@@ -65,7 +65,6 @@ class User:
         self.team = team
 
     def getCards(self):
-        print(self.cards)
         c = 0
         res = 'Cards in Hand:\n'
         for x in self.cards:
@@ -125,6 +124,7 @@ class Game:
         self.playerIdx = -1
         self.availableCards = DECK
         self.trump = None
+        self.lastRoundWinner = None
         self.currPlayer = None
         self.roundParams = {'First Player': None, 'Suit': None, 'Highest Card': None, 'Highest Player': None, 'Turn Count': 0, 'Current Player': None, 'Messages': None} 
         self.lastWinner = None
@@ -319,7 +319,10 @@ class Game:
         if(self.state == 'SETUP'):
             for i in range(5):
                 random.shuffle(self.availableCards)
-            self.callingTeam = str(random.randrange(2) + 1)
+            if(self.lastRoundWinner == None):
+                self.callingTeam = str(random.randrange(2) + 1)
+            else:
+                self.callingTeam = self.lastRoundWinner
             otherTeam = '2' if self.callingTeam == '1' else  '1'
             self.userlist[0] = self.teams[self.callingTeam][0]
             self.userlist[1] = self.teams[otherTeam][0]
@@ -328,6 +331,10 @@ class Game:
             self.state = 'TRUMP CALL 1'
             self.currPlayer = self.userlist[0]
             self.lastWinner = 0
+            
+            bot.send_message(self.userlist[1].id, 'Team ' + self.callingTeam + ' is calling the trump card.')
+            bot.send_message(self.userlist[2].id, 'Your teammate is calling the trump card.')
+            bot.send_message(self.userlist[3].id, 'Team ' + self.callingTeam + ' is calling the trump card.')
 
             for j in range(5):
                 self.userlist[0].cards.append(self.availableCards[j])               
@@ -384,7 +391,6 @@ class Game:
         #setting up round
         if(self.roundParams['Turn Count'] == 0):
             self.roundNo += 1
-            print('Round starting')
             for i in range(4):
                 bot.send_message(self.userlist[i].id, '------------------- ROUND ' + str(self.roundNo) + ' -------------------', reply_markup = ReplyKeyboardRemove()) 
             self.roundParams['First Player'] = self.lastWinner
@@ -414,6 +420,7 @@ class Game:
                 else:
                     self.gameScores['2'] += 1
                     winteam = 'Team 2'
+                self.lastRoundWinner = winteam[5]
                 for i in range(4):
                     bot.send_message(self.userlist[i].id, emojize(winteam + ' wins the game! :tada:', use_aliases=True), reply_markup=ReplyKeyboardRemove())
                 self.state = 'GAMEOVER'
@@ -494,7 +501,7 @@ def respond(update, context):
 def gameinfo(update, context):
     if(update.message.from_user.id in user_game):
         gameid = user_game[update.message.from_user.id]
-        update.message.reply_text(active_games[gameid].getGameInfo(), reply_markup=ReplyKeyboardRemove())
+        update.message.reply_text(active_games[gameid].getGameInfo())
     else:
         update.message.reply_text('Please create or join a game first.')
 
